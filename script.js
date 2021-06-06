@@ -224,7 +224,7 @@ createImage('/img/img-1.jpg')
    .then(() => (currentImg.style.display = 'none'))
    .catch(err => console.error(`Error OCCURED(${err})`));
 console.log('done');
-*/
+
 const renderError = function (msg) {
    countriesContainer.insertAdjacentText('beforeend', msg);
    countriesContainer.style.opacity = 1;
@@ -268,8 +268,12 @@ const whereAmI = async function () {
       const data = await response.json();
       console.log(data);
       renderCountry(data[0]);
+
+      return `2: You are in ${dataGeo.city}, ${dataGeo.country}.`
    } catch (err) {
       renderError(`Something went wrong (${err})`);
+
+      throw err;
    }
 };
 
@@ -279,5 +283,131 @@ const getPosition = function () {
    });
 };
 
-whereAmI();
-console.log('test');
+//console.log('1: Will get location');
+//whereAmI().then(msg => console.log(msg)).catch(err => console.log(`Error is: ${err}`).finally(() => console.log('3: Finished getting location'));
+
+
+(async function() {
+  try {
+    const msg = await whereAmI();
+    console.log(msg);
+  } catch (err) {
+    console.log(`Error is: ${err}`);
+  }
+})();
+
+const getJSON = function (url, errorMsg = 'Something went wrong') {
+   return fetch(url).then(response => {
+      if (!response.ok)
+         throw new Error(`${errorMsg} (${response.status}) TEST MESSAGE`);
+
+      return response.json();
+   });
+};
+
+const get3Countries = async function(c1, c2, c3) {
+  try {
+
+    // const [data1] = await getJSON(`https://restcountries.eu/rest/v2/name/${c1}`)
+    // const [data2] = await getJSON(`https://restcountries.eu/rest/v2/name/${c2}`)
+    // const [data3] = await getJSON(`https://restcountries.eu/rest/v2/name/${c3}`)
+
+    const data = await Promise.all([getJSON(`https://restcountries.eu/rest/v2/name/${c1}`), getJSON(`https://restcountries.eu/rest/v2/name/${c2}`), getJSON(`https://restcountries.eu/rest/v2/name/${c3}`)])
+
+    console.log(data.map(data => data[0].capital));
+
+  } catch (err) {
+
+    console.log(err);
+
+  }
+}
+
+get3Countries('russia', 'usa', 'moldova');
+
+
+const getJSON = function (url, errorMsg = 'Something went wrong') {
+   return fetch(url).then(response => {
+      if (!response.ok)
+         throw new Error(`${errorMsg} (${response.status}) TEST MESSAGE`);
+
+      return response.json();
+   });
+};
+
+(async function() {
+  const response = await Promise.race([getJSON(`https://restcountries.eu/rest/v2/name/italy`), getJSON(`https://restcountries.eu/rest/v2/name/russia`), getJSON(`https://restcountries.eu/rest/v2/name/australia`)])
+  console.log(response[0].capital)
+})();
+
+const timeout = function(sec) {
+  return new Promise(function(_, reject) {
+    setTimeout(function(){
+      reject(new Error('Request took too long!'))
+    }, sec * 1000)
+  })
+};
+
+
+Promise.race([getJSON(`https://restcountries.eu/rest/v2/name/italy`), timeout(0.01)]).then(x => console.log(x[0])).catch(err => console.log(err));
+*/
+
+let currentImg;
+
+const wait = function (seconds) {
+   return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+};
+
+const createImage = function (imgPath) {
+   return new Promise(function (resolve, reject) {
+      const img = document.createElement('img');
+      img.src = imgPath;
+      img.addEventListener('load', function () {
+         document.querySelector('.images').append(img);
+         currentImg = img;
+         resolve(img);
+      });
+      img.addEventListener('error', function (error) {
+         reject(new Error(`Something broke (${error})`));
+      });
+   });
+};
+
+// const loadNPause = async function() {
+//   try {
+//     let img = await createImage('/img/img-1.jpg');
+//     console.log(img)
+//     await wait(2);
+//     img.style.display = 'none'
+
+//     img = await createImage('/img/img-2.jpg');
+//     await wait(2);
+//     img.style.display = 'none'
+
+//     img = await createImage('/img/img-3.jpg');
+//     await wait(2);
+//     img.style.display = 'none'
+//   } catch(err) {
+//     console.log(err);
+//   }
+// };
+// loadNPause();
+
+const loadAll = async function(imgPathArray) {
+  try {
+    
+    const imgs = await imgPathArray.map(async imgPath => {
+      const test = await createImage(imgPath)
+      test.classList.add('parallel')
+      return test
+      })
+  
+    console.log(await Promise.all(imgs))
+    
+  } catch(err) {
+    console.log(err);
+  }
+  
+}
+
+loadAll(['img/img-1.jpg', 'img/img-2.jpg', 'img/img-3.jpg'])
